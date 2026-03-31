@@ -1,0 +1,129 @@
+Title: '&0✦ 服务器主菜单 ✦'
+
+# ━━━━━ 命令绑定 ━━━━━
+# 玩家输入 /cd 或 /menu 即可直接打开此菜单
+Bindings:
+  command:
+    - 'cd'
+    - 'menu'
+
+# ━━━━━ 布局 ━━━━━
+# 用反引号包裹多字符 key，空格填充空位
+Shape:
+  - '####i####'
+  - '#  A B  #'
+  - '#  C D  #'
+  - '#  E F  #'
+  - '#########'
+
+# ━━━━━ 按钮定义 ━━━━━
+BUTTONS:
+  '#':
+    display:
+      material: BLACK_STAINED_GLASS_PANE
+      name: ' '
+
+  # ═══ 玩家信息（头颅 + 自动刷新） ═══
+  'i':
+    update: 40
+    display:
+      # player_head: 格式自动显示当前玩家皮肤头颅
+      material: player_head:%player_name%
+      name: '&a&l★ %player_name% &7的个人信息'
+      lore:
+        - '&7'
+        - '  &f金币: &e%vault_eco_balance%'
+        - '  &f等级: &b%player_level%'
+        - '  &f生命: &c%player_health%&7/&c%player_max_health%'
+        - '&7'
+
+  # ═══ 功能按钮示例 ═══
+  'A':
+    display:
+      material: COMPASS
+      name: '&b&l🌀 随机传送'
+      lore:
+        - '&7'
+        - '&7传送到随机位置，开始冒险'
+        - '&7'
+        - '&a▶ 点击传送'
+    actions:
+      all:
+        - 'sound: BLOCK_NOTE_BLOCK_PLING-1-2'
+        - 'close'
+        - 'command: rt'
+
+  'B':
+    display:
+      material: ENDER_PEARL
+      name: '&d&l🚀 世界传送'
+      lore:
+        - '&7'
+        - '&7前往不同的世界'
+        - '&7'
+        - '&d▶ 点击打开'
+    actions:
+      all:
+        - 'sound: BLOCK_NOTE_BLOCK_PLING-1-2'
+        - 'menu: example_shop'
+
+  'C':
+    display:
+      material: CHEST
+      name: '&6&l🏪 系统商店'
+      lore:
+        - '&7'
+        - '&7购买和出售物品'
+        - '&7'
+        - '&6▶ 点击进入'
+    actions:
+      all:
+        - 'sound: BLOCK_NOTE_BLOCK_PLING-1-2'
+        - 'menu: example_shop'
+
+  'D':
+    display:
+      material: DIAMOND_SWORD
+      name: '&c&l⚔ PVP 竞技场'
+      lore:
+        - '&7'
+        - '&7与其他玩家切磋技艺'
+        - '&7'
+        - '&c▶ 点击加入'
+    actions:
+      all:
+        - 'close'
+        - 'command: warp pvp'
+
+  'E':
+    display:
+      material: BOOK
+      name: '&9&l📜 服务器规则'
+      lore:
+        - '&7'
+        - '&7了解服务器规则'
+        - '&7遵守规则，和谐游戏'
+        - '&7'
+        - '&9▶ 点击查看'
+    actions:
+      all:
+        - 'sound: BLOCK_NOTE_BLOCK_PLING-1-2'
+        - 'tell: &7━━━━━━━━━━━━━━━━━━━━━━━━'
+        - 'tell: &a 1. 禁止使用外挂和作弊工具'
+        - 'tell: &a 2. 尊重其他玩家'
+        - 'tell: &a 3. 禁止恶意破坏'
+        - 'tell: &7━━━━━━━━━━━━━━━━━━━━━━━━'
+
+  'F':
+    display:
+      material: RED_BED
+      name: '&d&l🏠 我的家'
+      lore:
+        - '&7'
+        - '&7传送回你设置的家'
+        - '&7'
+        - '&d▶ 点击回家'
+    actions:
+      all:
+        - 'close'
+        - 'command: home'

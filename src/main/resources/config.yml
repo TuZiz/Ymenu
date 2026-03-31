@@ -1,0 +1,5 @@
+menus-directory: menus
+fallback-material: PAPER
+packet-screen-sync: true
+packet-soft-switch: true
+debug: false

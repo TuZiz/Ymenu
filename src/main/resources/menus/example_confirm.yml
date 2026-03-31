@@ -1,0 +1,59 @@
+Title: '&0✦ 确认操作 ✦'
+
+# ━━━━━ 确认/取消对话框模板 ━━━━━
+# 用于二次确认危险操作（如购买、删除等）
+
+Shape:
+  - '#########'
+  - '###i#####'
+  - '#Y###N##z'
+
+BUTTONS:
+  '#':
+    display:
+      material: BLACK_STAINED_GLASS_PANE
+      name: ' '
+
+  'i':
+    display:
+      material: PAPER
+      name: '&e&l⚠ 请确认你的操作'
+      lore:
+        - '&7'
+        - '&7你确定要执行此操作吗？'
+        - '&7该操作可能不可逆转'
+        - '&7'
+
+  # ═══ 确认按钮 ═══
+  'Y':
+    display:
+      material: LIME_WOOL
+      name: '&a&l✔ 确认'
+      lore:
+        - '&7点击确认操作'
+    actions:
+      all:
+        - 'sound: ENTITY_PLAYER_LEVELUP-0.5-1'
+        - 'close'
+        - 'tell: &a操作已确认！'
+
+  # ═══ 取消按钮 ═══
+  'N':
+    display:
+      material: RED_WOOL
+      name: '&c&l✖ 取消'
+      lore:
+        - '&7点击取消操作'
+    actions:
+      all:
+        - 'sound: BLOCK_NOTE_BLOCK_BASS-1-0.5'
+        - 'back: example_main'
+
+  # ═══ 返回上级菜单 ═══
+  'z':
+    display:
+      material: ARROW
+      name: '&7← 返回'
+    actions:
+      all:
+        - 'back: example_main'

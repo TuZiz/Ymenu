@@ -1,0 +1,19 @@
+name: Ymenu
+main: cc.neurons.ymenu.YmenuPlugin
+version: 1.0.0
+api-version: '1.20'
+folia-supported: true
+softdepend:
+  - PlaceholderAPI
+  - PlayerPoints
+  - Vault
+commands:
+  ymenu:
+    description: Open or reload Ymenu menus
+    usage: /ymenu <open|reload> ...
+    permission: ymenu.admin
+permissions:
+  ymenu.admin:
+    default: op
+  ymenu.demo.close:
+    default: op

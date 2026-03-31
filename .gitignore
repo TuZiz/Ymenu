@@ -1,0 +1,24 @@
+# Build
+build/
+.gradle/
+.gradle-user-home/
+out/
+
+# IDE
+.idea/
+*.iml
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+trmenu_listing.txt
+trmenu_classes.txt
+crops.yml
+
+# Large binary dirs
+TrMenu/
+libs/
+gradle/wrapper/gradle-wrapper.jar

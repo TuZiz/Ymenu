@@ -1,0 +1,158 @@
+Title: '&0✦ 系统商店 ✦'
+
+TITLE-UPDATE: 60
+
+Shape:
+  - '#########'
+  - '# A B C #'
+  - '# D E F #'
+  - '#########'
+  - '####z####'
+
+BUTTONS:
+  '#':
+    display:
+      material: GRAY_STAINED_GLASS_PANE
+      name: ' '
+
+  # ═══ 返回按钮 ═══
+  'z':
+    display:
+      material: ARROW
+      name: '&c&l← 返回主菜单'
+    actions:
+      all:
+        - 'sound: BLOCK_CHEST_CLOSE-1-1'
+        - 'menu: example_main'
+
+  # ═══ 商品：条件变体 + amount + priority 示例 ═══
+  'A':
+    display:
+      material: DIAMOND
+      amount: 5
+      name: '&b&l💎 钻石 x5'
+      lore:
+        - '&7'
+        - '&7价格: &e500 金币'
+        - '&7'
+        - '&a▶ 点击购买'
+    actions:
+      all:
+        - 'sound: ENTITY_EXPERIENCE_ORB_PICKUP-1-1'
+        - 'vault take: 500'
+        - 'console: give %player_name% diamond 5'
+        - 'tell: &a成功购买 &b钻石x5 &a！'
+        - 'refresh'
+    # 条件变体：余额不足时显示不同样式
+    icons:
+      - condition: 'check papi %vault_eco_balance% < 500'
+        priority: 1
+        display:
+          mats: DIAMOND
+          amount: 5
+          name: '&c&l💎 钻石 x5'
+          lore:
+            - '&7'
+            - '&7价格: &e500 金币'
+            - '&c余额不足! 当前: &e%vault_eco_balance%'
+            - '&7'
+            - '&c✖ 无法购买'
+
+  'B':
+    display:
+      material: GOLDEN_APPLE
+      amount: 3
+      name: '&6&l🍎 金苹果 x3'
+      lore:
+        - '&7'
+        - '&7价格: &e300 金币'
+        - '&7'
+        - '&a▶ 点击购买'
+    actions:
+      all:
+        - 'vault take: 300'
+        - 'console: give %player_name% golden_apple 3'
+        - 'tell: &a成功购买 &6金苹果x3 &a！'
+        - 'refresh'
+    icons:
+      - condition: 'check papi %vault_eco_balance% < 300'
+        priority: 1
+        display:
+          mats: GOLDEN_APPLE
+          amount: 3
+          name: '&c&l🍎 金苹果 x3'
+          lore:
+            - '&7'
+            - '&7价格: &e300 金币'
+            - '&c余额不足!'
+            - '&7'
+            - '&c✖ 无法购买'
+
+  'C':
+    display:
+      material: IRON_SWORD
+      name: '&7&l⚔ 铁剑'
+      shiny: true
+      lore:
+        - '&7'
+        - '&7价格: &e150 金币'
+        - '&7附魔: &d锋利 I'
+        - '&7'
+        - '&a▶ 点击购买'
+    actions:
+      all:
+        - 'vault take: 150'
+        - 'console: give %player_name% iron_sword{Enchantments:[{id:sharpness,lvl:1}]} 1'
+        - 'tell: &a成功购买 &7铁剑 &a！'
+
+  'D':
+    display:
+      material: BREAD
+      amount: 32
+      name: '&e&l🍞 面包 x32'
+      lore:
+        - '&7'
+        - '&7价格: &e50 金币'
+        - '&7'
+        - '&a▶ 点击购买'
+    actions:
+      all:
+        - 'vault take: 50'
+        - 'console: give %player_name% bread 32'
+        - 'tell: &a成功购买 &e面包x32 &a！'
+        - 'refresh'
+
+  'E':
+    display:
+      material: EXPERIENCE_BOTTLE
+      amount: 10
+      name: '&a&l✨ 经验瓶 x10'
+      lore:
+        - '&7'
+        - '&7价格: &e200 金币'
+        - '&7'
+        - '&a▶ 点击购买'
+    actions:
+      all:
+        - 'vault take: 200'
+        - 'console: give %player_name% experience_bottle 10'
+        - 'tell: &a成功购买 &a经验瓶x10 &a！'
+
+  # ═══ 出售物品（左右键不同功能） ═══
+  'F':
+    display:
+      material: EMERALD
+      name: '&a&l💰 出售钻石'
+      lore:
+        - '&7'
+        - '&7左键: 出售 1 个钻石 → &e50 金币'
+        - '&7右键: 出售 全部钻石'
+        - '&7'
+        - '&a▶ 点击出售'
+    actions:
+      left:
+        - 'close'
+        - 'command: sell hand 1'
+      right:
+        - 'close'
+        - 'command: sell hand'

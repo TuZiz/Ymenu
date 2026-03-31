@@ -1,0 +1,93 @@
+Title: '&0✦ 交互功能 ✦'
+
+# ━━━━━ 输入捕获器 & 条件判断模板 ━━━━━
+
+Shape:
+  - '#########'
+  - '# A B C #'
+  - '#########'
+  - '####z####'
+
+BUTTONS:
+  '#':
+    display:
+      material: LIGHT_BLUE_STAINED_GLASS_PANE
+      name: ' '
+
+  'z':
+    display:
+      material: ARROW
+      name: '&c&l← 返回主菜单'
+    actions:
+      all:
+        - 'menu: example_main'
+
+  # ═══ TPA 传送请求（聊天输入捕获器） ═══
+  'A':
+    display:
+      material: ENDER_PEARL
+      name: '&9&l🚀 玩家传送 (TPA)'
+      lore:
+        - '&7'
+        - '&7向指定玩家发送传送请求'
+        - '&7'
+        - '&9▶ 点击输入玩家名'
+    actions:
+      all:
+        - 'close'
+        - catcher:
+            TargetPlayer:
+              type: CHAT
+              start: 'tell: &e请在聊天栏输入目标玩家名 &7(输入 &ccancel &7取消)'
+              cancel: 'tell: &c已取消传送操作'
+              end:
+                - 'command: tpa {input}'
+                - 'tell: &a已向 &b{input} &a发送传送请求！'
+
+  # ═══ 权限条件变体示例 ═══
+  'B':
+    display:
+      material: CRAFTING_TABLE
+      name: '&e&l🔨 随身工作台'
+      lore:
+        - '&7'
+        - '&7随时随地打开工作台'
+        - '&c需要 VIP 权限'
+        - '&7'
+        - '&c✖ 权限不足'
+    # VIP 用户看到不同的界面
+    icons:
+      - condition: 'perm vip.workbench'
+        priority: 1
+        display:
+          mats: CRAFTING_TABLE
+          name: '&a&l🔨 随身工作台'
+          lore:
+            - '&7'
+            - '&7点击直接打开工作台'
+            - '&7'
+            - '&a▶ 点击使用'
+        actions:
+          all:
+            - 'close'
+            - 'command: workbench'
+
+  # ═══ 延迟动作 + Title 消息 ═══
+  'C':
+    display:
+      material: CLOCK
+      name: '&6&l⏰ 延迟传送演示'
+      lore:
+        - '&7'
+        - '&7演示延迟动作和标题消息'
+        - '&7点击后 3 秒传送到出生点'
+        - '&7'
+        - '&6▶ 点击体验'
+    actions:
+      all:
+        - 'close'
+        - 'title: &a传送中...|&7请等待 3 秒|10|60|10'
+        - 'sound: BLOCK_NOTE_BLOCK_PLING-1-2'
+        - 'delay: 60'
+        - 'command: spawn'
+        - 'title: &a传送完成!|&7已到达出生点|10|40|10'
