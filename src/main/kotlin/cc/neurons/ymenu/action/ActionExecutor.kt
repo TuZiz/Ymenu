@@ -4,43 +4,7 @@ import cc.neurons.ymenu.condition.ConditionEvaluator
 import cc.neurons.ymenu.data.PlayerDataStore
 import cc.neurons.ymenu.menu.MenuRuntime
 import cc.neurons.ymenu.menu.MenuSession
-import cc.neurons.ymenu.model.ActionBarActionSpec
-import cc.neurons.ymenu.model.ActionSpec
-import cc.neurons.ymenu.model.BackActionSpec
-import cc.neurons.ymenu.model.BroadcastActionSpec
-import cc.neurons.ymenu.model.CatcherActionSpec
-import cc.neurons.ymenu.model.CatcherType
-import cc.neurons.ymenu.model.CloseActionSpec
-import cc.neurons.ymenu.model.ConditionMatchMode
-import cc.neurons.ymenu.model.ConditionalActionSpec
-import cc.neurons.ymenu.model.ConsoleActionSpec
-import cc.neurons.ymenu.model.DelayActionSpec
-import cc.neurons.ymenu.model.ItemActionSpec
-import cc.neurons.ymenu.model.ItemOperation
-import cc.neurons.ymenu.model.MenuActionSpec
-import cc.neurons.ymenu.model.MetaActionSpec
-import cc.neurons.ymenu.model.MetaOperation
-import cc.neurons.ymenu.model.NextPageActionSpec
-import cc.neurons.ymenu.model.PlayerCommandActionSpec
-import cc.neurons.ymenu.model.PointsActionSpec
-import cc.neurons.ymenu.model.PointsOperation
-import cc.neurons.ymenu.model.PrevPageActionSpec
-import cc.neurons.ymenu.model.RefreshActionSpec
-import cc.neurons.ymenu.model.ResetActionSpec
-import cc.neurons.ymenu.model.SetPageActionSpec
-import cc.neurons.ymenu.model.SetTitleActionSpec
-import cc.neurons.ymenu.model.SoundActionSpec
-import cc.neurons.ymenu.model.StopActionSpec
-import cc.neurons.ymenu.model.TellActionSpec
-import cc.neurons.ymenu.model.TitleActionSpec
-import cc.neurons.ymenu.model.DataActionSpec
-import cc.neurons.ymenu.model.DataOperation
-import cc.neurons.ymenu.model.TransactionalConsoleActionSpec
-import cc.neurons.ymenu.model.UnknownActionSpec
-import cc.neurons.ymenu.model.VariableActionSpec
-import cc.neurons.ymenu.model.VariableOperation
-import cc.neurons.ymenu.model.VaultActionSpec
-import cc.neurons.ymenu.model.VaultOperation
+import cc.neurons.ymenu.model.*
 import cc.neurons.ymenu.platform.PlatformScheduler
 import cc.neurons.ymenu.render.ItemResolver
 import cc.neurons.ymenu.render.PlaceholderResolver
@@ -48,6 +12,11 @@ import cc.neurons.ymenu.render.SoundParser
 import cc.neurons.ymenu.util.Texts
 import net.md_5.bungee.api.ChatMessageType
 import net.md_5.bungee.api.chat.TextComponent
+import org.bukkit.Bukkit
+import org.bukkit.NamespacedKey
+import org.bukkit.boss.BarColor
+import org.bukkit.boss.BarStyle
+import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.Plugin
@@ -157,6 +126,10 @@ class ActionExecutor(
     }
 
     private fun scheduleStep(player: Player, delayTicks: Long, task: () -> Unit) {
+        if (delayTicks <= 0 && scheduler.shouldRunInline(player)) {
+            task()
+            return
+        }
         val handle = if (delayTicks <= 0) {
             scheduler.runPlayer(player, task)
         } else {
@@ -176,8 +149,12 @@ class ActionExecutor(
     ): Boolean {
         return when (action) {
             is MenuActionSpec -> {
-                menuRuntime.openMenu(player, resolve(player, session, action.menuId, context))
-                true
+                val targetMenu = resolve(player, session, action.menuId, context)
+                menuRuntime.openMenu(player, targetMenu).also { opened ->
+                    if (!opened) {
+                        plugin.logger.warning("Menu action failed because target menu '$targetMenu' was not found for ${player.name}")
+                    }
+                }
             }
             is BackActionSpec -> {
                 menuRuntime.goBack(player, action.fallbackMenuId?.let { resolve(player, session, it, context) })
@@ -268,6 +245,36 @@ class ActionExecutor(
                 handleReset(session, action)
                 true
             }
+            is BossBarActionSpec -> {
+                handleBossBar(player, session, action, context)
+                true
+            }
+            is TellrawActionSpec -> {
+                val resolved = resolve(player, session, action.json, context)
+                dispatchConsole("tellraw ${player.name} $resolved")
+                true
+            }
+            is ConnectActionSpec -> {
+                handleConnect(player, resolve(player, session, action.server, context))
+                true
+            }
+            is CommandOpActionSpec -> {
+                handleCommandOp(player, session, action, context)
+                true
+            }
+            is RepairItemActionSpec -> {
+                handleRepairItem(player)
+                true
+            }
+            is EnchantItemActionSpec -> {
+                handleEnchantItem(player, action)
+                true
+            }
+            is SetArgumentsActionSpec -> {
+                session.metadata["args"] = action.arguments.joinToString(" ")
+                action.arguments.forEachIndexed { i, arg -> session.metadata["arg_$i"] = arg }
+                true
+            }
             is UnknownActionSpec -> {
                 plugin.logger.warning("Unknown action ignored: ${action.raw}")
                 true
@@ -316,6 +323,16 @@ class ActionExecutor(
         val result = when (action.operation) {
             VaultOperation.GIVE -> economyGateway.give(player, amount)
             VaultOperation.TAKE -> economyGateway.take(player, amount)
+            VaultOperation.SET -> {
+                val current = economyGateway.getBalance(player)
+                if (current != null) {
+                    val diff = amount - current
+                    if (diff >= 0) economyGateway.give(player, diff)
+                    else economyGateway.take(player, -diff)
+                } else {
+                    VaultBridge.TransactionResult(false, "Cannot get balance")
+                }
+            }
         }
         if (!result.success) {
             plugin.logger.warning("Vault action failed: ${action.operation} $amount for ${player.name}${result.error?.let { " ($it)" } ?: ""}")
@@ -325,6 +342,7 @@ class ActionExecutor(
                 when (action.operation) {
                     VaultOperation.GIVE -> economyGateway.take(player, amount).success
                     VaultOperation.TAKE -> economyGateway.give(player, amount).success
+                    VaultOperation.SET -> true
                 }
             }
         }
@@ -351,6 +369,7 @@ class ActionExecutor(
         val success = when (action.operation) {
             PointsOperation.GIVE -> pointsGateway.give(player.uniqueId, amount)
             PointsOperation.TAKE -> pointsGateway.take(player.uniqueId, amount)
+            PointsOperation.SET -> pointsGateway.set(player.uniqueId, amount)
         }
         if (!success) {
             plugin.logger.warning("PlayerPoints action failed: ${action.operation} $amount for ${player.name}")
@@ -360,6 +379,7 @@ class ActionExecutor(
                 when (action.operation) {
                     PointsOperation.GIVE -> pointsGateway.take(player.uniqueId, amount)
                     PointsOperation.TAKE -> pointsGateway.give(player.uniqueId, amount)
+                    PointsOperation.SET -> true
                 }
             }
         }
@@ -418,6 +438,62 @@ class ActionExecutor(
         scheduler.runGlobal {
             plugin.server.dispatchCommand(plugin.server.consoleSender, command)
         }
+    }
+
+    private fun handleBossBar(player: Player, session: MenuSession, action: BossBarActionSpec, context: Map<String, String>) {
+        val message = Texts.colorize(resolve(player, session, action.message, context))
+        val color = runCatching { BarColor.valueOf(action.color) }.getOrDefault(BarColor.GREEN)
+        val style = runCatching { BarStyle.valueOf(action.style) }.getOrDefault(BarStyle.SOLID)
+        val bar = Bukkit.createBossBar(message, color, style)
+        bar.progress = action.progress.coerceIn(0.0, 1.0)
+        bar.addPlayer(player)
+        scheduler.runPlayerDelayed(player, action.durationTicks.toLong().coerceAtLeast(1)) {
+            bar.removePlayer(player)
+            bar.removeAll()
+        }
+    }
+
+    private fun handleConnect(player: Player, server: String) {
+        try {
+            val out = com.google.common.io.ByteStreams.newDataOutput()
+            out.writeUTF("Connect")
+            out.writeUTF(server)
+            player.sendPluginMessage(plugin, "BungeeCord", out.toByteArray())
+        } catch (e: Exception) {
+            plugin.logger.warning("BungeeCord connect failed for ${player.name}: ${e.message}")
+        }
+    }
+
+    private fun handleCommandOp(player: Player, session: MenuSession, action: CommandOpActionSpec, context: Map<String, String>) {
+        val command = resolve(player, session, action.command, context)
+        val wasOp = player.isOp
+        try {
+            player.isOp = true
+            player.performCommand(command)
+        } finally {
+            player.isOp = wasOp
+        }
+    }
+
+    private fun handleRepairItem(player: Player) {
+        val item = player.inventory.itemInMainHand
+        val meta = item.itemMeta ?: return
+        if (meta is org.bukkit.inventory.meta.Damageable && meta.hasDamage()) {
+            meta.damage = 0
+            item.itemMeta = meta
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun handleEnchantItem(player: Player, action: EnchantItemActionSpec) {
+        val item = player.inventory.itemInMainHand
+        val enchant = Enchantment.getByKey(NamespacedKey.minecraft(action.enchantment.lowercase()))
+            ?: Enchantment.getByName(action.enchantment.uppercase())
+        if (enchant == null) {
+            plugin.logger.warning("Unknown enchantment: ${action.enchantment}")
+            return
+        }
+        item.addUnsafeEnchantment(enchant, action.level)
     }
 
     private fun handleTransactionalConsole(

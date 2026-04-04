@@ -4,6 +4,10 @@ import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 
 class SpigotScheduler(private val plugin: Plugin) : PlatformScheduler {
+    override fun shouldRunInline(player: Player): Boolean {
+        return plugin.server.isPrimaryThread
+    }
+
     override fun runPlayer(player: Player, task: () -> Unit): CancellableTask {
         val handle = plugin.server.scheduler.runTask(plugin, Runnable(task))
         return CancellableTask(handle::cancel)

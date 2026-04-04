@@ -24,6 +24,10 @@ class PlayerPointsBridge(
         handle.take.invoke(handle.api, uuid, points) as? Boolean ?: false
     }
 
+    override fun set(playerId: UUID, amount: Int): Boolean = invoke(playerId, amount) { handle, uuid, points ->
+        handle.set.invoke(handle.api, uuid, points) as? Boolean ?: false
+    }
+
     private fun invoke(playerId: UUID, amount: Int, action: (ApiHandle, UUID, Int) -> Boolean): Boolean {
         val handle = resolveApi() ?: return false
         return runCatching {
@@ -55,6 +59,7 @@ class PlayerPointsBridge(
                     api = api,
                     give = apiClass.getMethod("give", UUID::class.java, Integer.TYPE),
                     take = apiClass.getMethod("take", UUID::class.java, Integer.TYPE),
+                    set = apiClass.getMethod("set", UUID::class.java, Integer.TYPE),
                 ).also {
                     apiHandle = it
                     missingWarningLogged = false
@@ -74,5 +79,6 @@ class PlayerPointsBridge(
         val api: Any,
         val give: Method,
         val take: Method,
+        val set: Method,
     )
 }

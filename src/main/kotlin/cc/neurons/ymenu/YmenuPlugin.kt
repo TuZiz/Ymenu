@@ -4,6 +4,7 @@ import cc.neurons.ymenu.command.YmenuCommand
 import cc.neurons.ymenu.config.MenuRepository
 import cc.neurons.ymenu.data.PlayerDataStore
 import cc.neurons.ymenu.listener.MenuListener
+import cc.neurons.ymenu.listener.PaperAsyncChatListener
 import cc.neurons.ymenu.menu.MenuService
 import cc.neurons.ymenu.platform.PlatformDetector
 import cc.neurons.ymenu.render.PlaceholderResolver
@@ -28,6 +29,9 @@ class YmenuPlugin : JavaPlugin() {
         menuService = MenuService(this, scheduler, placeholderResolver, menuRepository, playerDataStore)
 
         server.pluginManager.registerEvents(MenuListener(menuService, menuRepository), this)
+        if (PaperAsyncChatListener(this, menuService).register()) {
+            logger.info("Registered Paper AsyncChatEvent bridge for chat catcher support.")
+        }
         val command = YmenuCommand(menuService, menuRepository)
         getCommand("ymenu")?.setExecutor(command)
         getCommand("ymenu")?.tabCompleter = command

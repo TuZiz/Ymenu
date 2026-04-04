@@ -3,6 +3,8 @@ package cc.neurons.ymenu.platform
 import org.bukkit.entity.Player
 
 interface PlatformScheduler {
+    fun shouldRunInline(player: Player): Boolean
+
     fun runPlayer(player: Player, task: () -> Unit): CancellableTask?
 
     fun runPlayerDelayed(player: Player, delayTicks: Long, task: () -> Unit): CancellableTask?

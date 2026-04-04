@@ -57,7 +57,7 @@ class MenuListener(
         menuService.openMenu(event.player, menu.id)
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
     fun onAsyncChat(event: AsyncPlayerChatEvent) {
         if (menuService.handleChatInput(event.player, event.message)) {
             event.isCancelled = true

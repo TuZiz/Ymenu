@@ -54,7 +54,7 @@ class MenuService(
 
     fun openMenu(player: Player, menuId: String, pushHistory: Boolean = true): Boolean {
         val menu = repository.get(menuId) ?: return false
-        val scheduled = scheduler.runPlayer(player) {
+        val task = {
             val previous = sessions[player.uniqueId]
             val session = if (previous != null && canSoftSwitch(player, previous, menu)) {
                 previous.updateTask?.cancel()
@@ -74,7 +74,12 @@ class MenuService(
             }
             installUpdateTask(player, session)
         }
-        return scheduled != null
+        return if (scheduler.shouldRunInline(player)) {
+            task()
+            true
+        } else {
+            scheduler.runPlayer(player, task) != null
+        }
     }
 
     fun handleClick(player: Player, inventory: Inventory, rawSlot: Int, clickType: ClickType) {
@@ -167,8 +172,13 @@ class MenuService(
     override fun close(player: Player, bypassGuard: Boolean) {
         val session = sessions[player.uniqueId] ?: return
         session.closeReason = if (bypassGuard) CloseReason.ACTION else CloseReason.NORMAL
-        scheduler.runPlayer(player) {
+        val task = {
             player.closeInventory()
+        }
+        if (scheduler.shouldRunInline(player)) {
+            task()
+        } else {
+            scheduler.runPlayer(player, task)
         }
     }
 
@@ -258,10 +268,8 @@ class MenuService(
     }
 
     private fun renderSession(player: Player, session: MenuSession) {
-        session.slotButtons.clear()
-        for (slot in 0 until session.inventory.size) {
-            session.inventory.setItem(slot, null)
-        }
+        val desiredButtons = linkedMapOf<Int, String>()
+        val desiredItems = arrayOfNulls<org.bukkit.inventory.ItemStack>(session.inventory.size)
 
         session.maxPage = pageRenderer.maxPage(session) { isButtonVisible(player, session, it) }
         session.currentPage = session.currentPage.coerceIn(1, session.maxPage)
@@ -277,16 +285,26 @@ class MenuService(
                     return@forEachIndexed
                 }
                 val slot = rowIndex * 9 + columnIndex
-                session.inventory.setItem(slot, itemRenderer.render(player, resolved, session))
-                session.slotButtons[slot] = button.key
+                desiredItems[slot] = itemRenderer.render(player, resolved, session)
+                desiredButtons[slot] = button.key
             }
         }
 
         pageRenderer.pageSlice(session) { resolveButton(player, session, it) != null }.forEach { (slot, button) ->
             val resolved = resolveButton(player, session, button) ?: return@forEach
-            session.inventory.setItem(slot, itemRenderer.render(player, resolved, session))
-            session.slotButtons[slot] = button.key
+            desiredItems[slot] = itemRenderer.render(player, resolved, session)
+            desiredButtons[slot] = button.key
         }
+
+        for (slot in 0 until session.inventory.size) {
+            val current = session.inventory.getItem(slot)
+            val next = desiredItems[slot]
+            if (!sameItem(current, next)) {
+                session.inventory.setItem(slot, next)
+            }
+        }
+        session.slotButtons.clear()
+        session.slotButtons.putAll(desiredButtons)
     }
 
     private fun installUpdateTask(player: Player, session: MenuSession) {
@@ -423,5 +441,12 @@ class MenuService(
         } else {
             specific + all
         }
+    }
+
+    private fun sameItem(current: org.bukkit.inventory.ItemStack?, next: org.bukkit.inventory.ItemStack?): Boolean {
+        if (current == null || next == null) {
+            return current == null && next == null
+        }
+        return current.amount == next.amount && current.isSimilar(next)
     }
 }

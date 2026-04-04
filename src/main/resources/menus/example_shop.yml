@@ -39,7 +39,7 @@ BUTTONS:
     actions:
       all:
         - 'sound: ENTITY_EXPERIENCE_ORB_PICKUP-1-1'
-        - 'vault take: 500'
+        - 'take-money: 500'
         - 'console: give %player_name% diamond 5'
         - 'tell: &a成功购买 &b钻石x5 &a！'
         - 'refresh'
@@ -70,7 +70,7 @@ BUTTONS:
         - '&a▶ 点击购买'
     actions:
       all:
-        - 'vault take: 300'
+        - 'take-money: 300'
         - 'console: give %player_name% golden_apple 3'
         - 'tell: &a成功购买 &6金苹果x3 &a！'
         - 'refresh'
@@ -101,7 +101,7 @@ BUTTONS:
         - '&a▶ 点击购买'
     actions:
       all:
-        - 'vault take: 150'
+        - 'take-money: 150'
         - 'console: give %player_name% iron_sword{Enchantments:[{id:sharpness,lvl:1}]} 1'
         - 'tell: &a成功购买 &7铁剑 &a！'
 
@@ -117,7 +117,7 @@ BUTTONS:
         - '&a▶ 点击购买'
     actions:
       all:
-        - 'vault take: 50'
+        - 'take-money: 50'
         - 'console: give %player_name% bread 32'
         - 'tell: &a成功购买 &e面包x32 &a！'
         - 'refresh'
@@ -134,7 +134,7 @@ BUTTONS:
         - '&a▶ 点击购买'
     actions:
       all:
-        - 'vault take: 200'
+        - 'take-money: 200'
         - 'console: give %player_name% experience_bottle 10'
         - 'tell: &a成功购买 &a经验瓶x10 &a！'
 

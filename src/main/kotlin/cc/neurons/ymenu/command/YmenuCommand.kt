@@ -70,7 +70,9 @@ class YmenuCommand(
             return true
         }
 
-        sender.sendMessage(Texts.colorize("&aOpened menu '&f${args[1]}&a' for &f${target.name}&a."))
+        if (sender != target) {
+            sender.sendMessage(Texts.colorize("&aOpened menu '&f${args[1]}&a' for &f${target.name}&a."))
+        }
         return true
     }
 

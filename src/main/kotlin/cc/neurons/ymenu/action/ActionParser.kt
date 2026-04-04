@@ -1,42 +1,6 @@
 package cc.neurons.ymenu.action
 
-import cc.neurons.ymenu.model.ActionBarActionSpec
-import cc.neurons.ymenu.model.ActionSpec
-import cc.neurons.ymenu.model.BackActionSpec
-import cc.neurons.ymenu.model.BroadcastActionSpec
-import cc.neurons.ymenu.model.CloseActionSpec
-import cc.neurons.ymenu.model.CatcherActionSpec
-import cc.neurons.ymenu.model.CatcherType
-import cc.neurons.ymenu.model.ConditionMatchMode
-import cc.neurons.ymenu.model.ConditionalActionSpec
-import cc.neurons.ymenu.model.ConsoleActionSpec
-import cc.neurons.ymenu.model.DelayActionSpec
-import cc.neurons.ymenu.model.ItemActionSpec
-import cc.neurons.ymenu.model.ItemOperation
-import cc.neurons.ymenu.model.MenuActionSpec
-import cc.neurons.ymenu.model.NextPageActionSpec
-import cc.neurons.ymenu.model.PlayerCommandActionSpec
-import cc.neurons.ymenu.model.PointsActionSpec
-import cc.neurons.ymenu.model.PointsOperation
-import cc.neurons.ymenu.model.PrevPageActionSpec
-import cc.neurons.ymenu.model.RefreshActionSpec
-import cc.neurons.ymenu.model.ResetActionSpec
-import cc.neurons.ymenu.model.SetPageActionSpec
-import cc.neurons.ymenu.model.SetTitleActionSpec
-import cc.neurons.ymenu.model.SoundActionSpec
-import cc.neurons.ymenu.model.StopActionSpec
-import cc.neurons.ymenu.model.TellActionSpec
-import cc.neurons.ymenu.model.TitleActionSpec
-import cc.neurons.ymenu.model.TransactionalConsoleActionSpec
-import cc.neurons.ymenu.model.UnknownActionSpec
-import cc.neurons.ymenu.model.DataActionSpec
-import cc.neurons.ymenu.model.DataOperation
-import cc.neurons.ymenu.model.MetaActionSpec
-import cc.neurons.ymenu.model.MetaOperation
-import cc.neurons.ymenu.model.VariableActionSpec
-import cc.neurons.ymenu.model.VariableOperation
-import cc.neurons.ymenu.model.VaultActionSpec
-import cc.neurons.ymenu.model.VaultOperation
+import cc.neurons.ymenu.model.*
 
 class ActionParser {
     private val selfTargets = setOf("%player_name%", "%player%", "{player_name}", "{player}")
@@ -95,10 +59,13 @@ class ActionParser {
             "page" -> SetPageActionSpec(value, zeroBased = true)
             "vault give" -> parseAmountExpression(value, raw) { VaultActionSpec(VaultOperation.GIVE, it) }
             "vault take" -> parseAmountExpression(value, raw) { VaultActionSpec(VaultOperation.TAKE, it) }
+            "vault set" -> parseAmountExpression(value, raw) { VaultActionSpec(VaultOperation.SET, it) }
             "give-money", "give money" -> parseAmountExpression(value, raw) { VaultActionSpec(VaultOperation.GIVE, it) }
             "take-money", "take money" -> parseAmountExpression(value, raw) { VaultActionSpec(VaultOperation.TAKE, it) }
+            "set-money", "set money" -> parseAmountExpression(value, raw) { VaultActionSpec(VaultOperation.SET, it) }
             "give-point", "give point" -> parseAmountExpression(value, raw) { PointsActionSpec(PointsOperation.GIVE, it) }
             "take-point", "take point" -> parseAmountExpression(value, raw) { PointsActionSpec(PointsOperation.TAKE, it) }
+            "set-point", "set point", "points set" -> parseAmountExpression(value, raw) { PointsActionSpec(PointsOperation.SET, it) }
             "give item" -> parseItem(value, ItemOperation.GIVE, raw)
             "take item" -> parseItem(value, ItemOperation.TAKE, raw)
             "set var" -> parseVariableSet(value, raw)
@@ -110,6 +77,13 @@ class ActionParser {
             "set-data" -> parseKeyValue(value, raw) { key, actual -> DataActionSpec(DataOperation.SET, key, actual) }
             "del-data", "remove-data" -> DataActionSpec(DataOperation.DELETE, value)
             "update" -> RefreshActionSpec(reopen = value.equals("reopen", ignoreCase = true))
+            "bossbar" -> parseBossBar(value)
+            "tellraw" -> TellrawActionSpec(value)
+            "connect" -> ConnectActionSpec(value)
+            "commandop", "command-op" -> CommandOpActionSpec(value)
+            "repair" -> RepairItemActionSpec(value.ifBlank { "hand" })
+            "enchant" -> parseEnchant(value, raw)
+            "set-args", "set args" -> SetArgumentsActionSpec(value.split(' '))
             else -> UnknownActionSpec(raw)
         }
     }
@@ -333,6 +307,24 @@ class ActionParser {
             is List<*> -> parseAll(raw)
             else -> parseAll(listOf(raw))
         }
+    }
+
+    private fun parseBossBar(value: String): BossBarActionSpec {
+        val parts = value.split('|')
+        return BossBarActionSpec(
+            message = parts.getOrElse(0) { "" },
+            color = parts.getOrNull(1)?.trim()?.uppercase() ?: "GREEN",
+            style = parts.getOrNull(2)?.trim()?.uppercase() ?: "SOLID",
+            progress = parts.getOrNull(3)?.trim()?.toDoubleOrNull()?.coerceIn(0.0, 1.0) ?: 1.0,
+            durationTicks = parts.getOrNull(4)?.trim()?.toIntOrNull() ?: 60,
+        )
+    }
+
+    private fun parseEnchant(value: String, raw: String): ActionSpec {
+        val parts = value.split(' ', limit = 2)
+        val enchantment = parts.firstOrNull() ?: return UnknownActionSpec(raw)
+        val level = parts.getOrNull(1)?.toIntOrNull() ?: 1
+        return EnchantItemActionSpec(enchantment, level)
     }
 
     private fun findKey(entry: Map<*, *>, target: String): Any? {

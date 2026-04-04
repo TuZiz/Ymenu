@@ -79,14 +79,36 @@ data class ConditionalActionSpec(
 
 data class UnknownActionSpec(val raw: String) : ActionSpec
 
+data class BossBarActionSpec(
+    val message: String,
+    val color: String = "GREEN",
+    val style: String = "SOLID",
+    val progress: Double = 1.0,
+    val durationTicks: Int = 60,
+) : ActionSpec
+
+data class TellrawActionSpec(val json: String) : ActionSpec
+
+data class ConnectActionSpec(val server: String) : ActionSpec
+
+data class CommandOpActionSpec(val command: String) : ActionSpec
+
+data class RepairItemActionSpec(val slot: String = "hand") : ActionSpec
+
+data class EnchantItemActionSpec(val enchantment: String, val level: Int = 1) : ActionSpec
+
+data class SetArgumentsActionSpec(val arguments: List<String>) : ActionSpec
+
 enum class VaultOperation {
     GIVE,
     TAKE,
+    SET,
 }
 
 enum class PointsOperation {
     GIVE,
     TAKE,
+    SET,
 }
 
 enum class ItemOperation {
@@ -121,3 +143,4 @@ enum class CatcherType {
     SIGN,
     UNKNOWN,
 }
+

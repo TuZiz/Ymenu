@@ -6,6 +6,16 @@ import java.lang.reflect.Method
 import java.util.function.Consumer
 
 class FoliaScheduler(private val plugin: Plugin) : PlatformScheduler {
+    override fun shouldRunInline(player: Player): Boolean {
+        val bukkitClass = runCatching { Class.forName("org.bukkit.Bukkit") }.getOrNull() ?: return false
+        val method = bukkitClass.methods.firstOrNull { candidate ->
+            candidate.name == "isOwnedByCurrentRegion" &&
+                candidate.parameterCount == 1 &&
+                candidate.parameterTypes[0].isAssignableFrom(player.javaClass)
+        } ?: return false
+        return runCatching { method.invoke(null, player) as? Boolean ?: false }.getOrDefault(false)
+    }
+
     override fun runPlayer(player: Player, task: () -> Unit): CancellableTask? {
         val scheduler = playerScheduler(player) ?: return null
         val handle = invoke(

@@ -25,6 +25,11 @@ class VaultBridge(
         return response.toResult()
     }
 
+    override fun getBalance(player: Player): Double? {
+        val economy = economy() ?: return null
+        return runCatching { economy.getBalance(player) }.getOrNull()
+    }
+
     private fun economy(): Economy? {
         if (!plugin.server.pluginManager.isPluginEnabled("Vault")) {
             if (!missingWarningLogged) {
